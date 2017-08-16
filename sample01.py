@@ -27,4 +27,7 @@ sns.pairplot(df, hue=2)
 
 model = glm.Logit()
 model.fit(x, y)
+mu = model.predict(x)
+df2 = pd.DataFrame(data = np.c_[x,mu])
+#sns.pairplot(df2, hue=2)
 #model.status()
