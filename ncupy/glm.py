@@ -12,7 +12,10 @@ import numpy as np
 
 class Logit:
     """
-    Explanation for class
+    Class: Logit
+    =====
+    
+    Provides tools for estimation and prediction using Logit model
     """
     def __init__(self):
         """
@@ -23,6 +26,7 @@ class Logit:
         self.ydata = None  ## y
 
         ### For estimation options
+        self.__method = 'MLE'   ## Method for parameter estimation
         self.__max_iter = 1000  ## maximum number of iterations
         self.__th_imp = 1.0e-4  ## threshould of improvement
         self.__monitor = True   ## feedback or not
@@ -32,10 +36,11 @@ class Logit:
         self.llh = None    ## log-likelihood
 
 
-    def set_options(self, max_iter=1000, th_imp=1.0e-4, monitor=True):
+    def set_options(self, method='MLE', max_iter=1000, th_imp=1.0e-4, monitor=True):
         """
         Set options for estimation algorithms
         """
+        self.__method = method
         self.__max_iter = max_iter
         self.__th_imp = th_imp
         self.__monitor = monitor
@@ -46,7 +51,9 @@ class Logit:
         """
         print(self.xdata)
         print(self.ydata)
-
+        
+        return
+    
 
     def fit(self, xdata, ydata):
         """
@@ -65,7 +72,7 @@ class Logit:
 
         # Feedback the status to users
         if self.__monitor:
-            print('========== Start ==========')
+            print('========== Start: Maximum likelihood Estimation ==========')
             start_time = time.time()
 
         # Initialize the counter for judging the convergence condition
