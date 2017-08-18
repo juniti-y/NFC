@@ -261,9 +261,9 @@ class Logit:
         xdata = self.xdata
         zdata = np.dot(xdata, weight)
         ypred = logit(zdata)
-        lmbd = - np.tile(ypred * (1.0-ypred), (1, wdim))
-        lmbd_x = lmbd * xdata
-        hes_w = np.dot(xdata.T, lmbd_x)
+        var_diag = - np.tile(ypred * (1.0-ypred), (1, wdim))
+        var_x = var_diag * xdata
+        hes_w = np.dot(xdata.T, var_x)
         return hes_w
 
 ##############################################################################
