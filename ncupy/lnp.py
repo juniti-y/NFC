@@ -231,7 +231,10 @@ class LNP:
         ypred = np.exp(zpred)
 
         return ypred
-
+    
+    def get_fit_result(self):
+        return self.weight, self.llh, self.pnlt
+    
     def __log_likelihood(self, weight):
         """
         Compute the log-likelihood
