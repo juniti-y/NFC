@@ -35,7 +35,7 @@ W1 = 1.0
 W2 = -1.0
 
 # Baseline
-W0 = 2.0
+W0 = 0.5
 
 # Window size for moving average
 MV_W = 10
@@ -84,7 +84,7 @@ EFR = ES/(DELTA_T*MV_W)
 X = np.c_[np.reshape(X1, (X1.size, 1)), np.reshape(X2, (X2.size, 1))]
 
 # Generate the data matrix for responses
-Y = np.reshape(S, (S.size, 1))
+Y = S
 
 ######################################################################
 ###
@@ -96,7 +96,7 @@ Y = np.reshape(S, (S.size, 1))
 MODEL = lnp.LNP()
 
 # Change the options of the object
-MODEL.set_options(method='MLE2', delta_t=DELTA_T)
+MODEL.set_options(method='MLE2', delta_t=DELTA_T, lmbd=1e-8)
 
 # Run the fitting algorithm
 MODEL.fit(X, Y)

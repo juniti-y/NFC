@@ -83,8 +83,8 @@ class LNP:
             print('- Convergence: %r' % self.__converge)
             print('- Processing time: {:.4}'.format(self.__ptime) + '[sec]')
             print('')
-            print('- Coeffients = %s' % str(self.weight[:-1, 0]))
-            print('- Intercept: %.4f' % self.weight[-1, 0])
+            print('- Coeffients = %s' % str(self.weight[:-1]))
+            print('- Intercept: %.4f' % self.weight[-1])
             print('')
             print('- Empirical error: %.4e' % self.err)
             print('--- Normalized log-likelihood: %.4e' % (self.llh/self.xdata.shape[0]))
@@ -102,7 +102,7 @@ class LNP:
 
     def fit(self, xdata, ydata):
         """
-        Estimate the model parameters using the training data set (x,y)
+        Estimate the model parameters using the training data set (xdata, ydata)
         """
         ### Selecting the estimation algorithm
         if self.__method == 'MLE':
@@ -127,10 +127,10 @@ class LNP:
         Estimate the model parameters that fit the training data
         (xdata,ydata) by L2-reguralized maximum likelihood estimation method
         """
-
+        
         # Get the number of training samples
         ndata = xdata.shape[0]
-
+        
         # Store the training data into private variables
         self.xdata = np.c_[xdata.copy(), np.ones((ndata, 1))]
         self.ydata = ydata.copy()
@@ -139,11 +139,12 @@ class LNP:
         lmbd = self.__lambda
 
         # Intialize the parameters by zero-vector
-        weight = np.zeros((self.xdata.shape[1], 1))
+        weight = np.zeros(self.xdata.shape[1])
+        # weight = np.zeros((self.xdata.shape[1], 1))
         # Evaluate the initial log-likelihood
         llh = self.__log_likelihood(weight)
         # Evaluate the initial l2-penalty
-        pnlt = 0.5 * lmbd * np.dot(weight[:-1, 0], weight[:-1, 0])
+        pnlt = 0.5 * lmbd * np.dot(weight[:-1], weight[:-1])
         # Evaluate the regularized error function
         err = - llh/ndata + pnlt
 
@@ -159,7 +160,7 @@ class LNP:
             # Evaluate the gradient of log-likelihood
             grad_l = self.__grad_log_likelihood(weight)
             # Evaluate the gradient of l2-penalty term
-            grad_p = lmbd * weight.copy()
+            grad_p = lmbd * weight
             grad_p[-1] = 0.0
             # Evaluate the gradient of error function
             grad_err = - grad_l/ndata + grad_p
@@ -167,7 +168,7 @@ class LNP:
             # Evaluate the Hessian of log-likelihood
             hes_l = self.__hessian_log_likelihood(weight)
             # Evaluate the Hessian of l2-penelty term
-            hes_p = lmbd * np.eye(weight.shape[0])
+            hes_p = lmbd * np.eye(weight.size)
             hes_p[-1] = 0.0
             # Evaluate the Hessian of error function
             hes_err = - hes_l/ndata + hes_p
@@ -182,7 +183,7 @@ class LNP:
                 # Evaluate the log-likelihood of the updated parameter
                 llh_new = self.__log_likelihood(w_new)
                 # Evaluate the l2-penalty of the updated parameter
-                pnlt_new = 0.5 * lmbd * np.dot(w_new[:-1, 0], w_new[:-1, 0])
+                pnlt_new = 0.5 * lmbd * np.dot(w_new[:-1], w_new[:-1])
                 # Evaluate the regularized error function after updating
                 err_new = -llh_new/ndata + pnlt_new
                 if err_new <= err:
@@ -231,10 +232,13 @@ class LNP:
         ypred = np.exp(zpred)
 
         return ypred
-    
+
     def get_fit_result(self):
+        """
+        Get the result of parameter fitting
+        """
         return self.weight, self.llh, self.pnlt
-    
+
     def __log_likelihood(self, weight):
         """
         Compute the log-likelihood
@@ -255,11 +259,11 @@ class LNP:
         rval = np.exp(log_r)
 
         # Compute \sum_k y_k \ln r_k
-        sum_ylr = np.dot(ydata[:, 0], log_r[:, 0])
+        sum_ylr = np.dot(ydata, log_r)
         # Compute \sum_k r_k
-        sum_r = np.sum(rval[:, 0])
+        sum_r = np.sum(rval)
         # Compute \sum loggamma(y_k+1)
-        sum_lgr = np.sum(sp.special.gammaln(ydata[:, 0]+1))
+        sum_lgr = np.sum(sp.special.gammaln(ydata+1))
 
         # Compute the log-likelihood
         llh = sum_ylr - sum_r - sum_lgr
@@ -285,7 +289,7 @@ class LNP:
         rval = np.exp(log_r)
 
         # Compute the gradient of log-likelihood
-        grad_w = np.dot(xdata.T, ydata-rval)
+        grad_w = np.dot(ydata-rval, xdata)
         return grad_w
 
     def __hessian_log_likelihood(self, weight):
@@ -306,8 +310,11 @@ class LNP:
         rval = np.exp(log_r)
 
         # Compute the Hessian of log-likelihood
-        wdim = np.size(weight, axis=0)
-        r_diag = - np.tile(rval, (1, wdim))
-        r_x = r_diag * xdata
+        # wdim = np.size(weight, axis=0)
+        wdim = weight.size
+        r_diag = - np.matlib.repmat(rval, wdim, 1)
+        # r_diag = - np.tile(rval, (1, wdim))
+        r_x = r_diag.T * xdata
+        #r_x = r_diag * xdata
         hes_w = np.dot(xdata.T, r_x)
         return hes_w
