@@ -23,7 +23,7 @@ import matplotlib.pyplot as plt  # For pyplot
 ######################################################################
 
 # Sampling condition
-MAX_T = 500.0    # Duration (unit: [sec.])
+MAX_T = 100.0    # Duration (unit: [sec.])
 DELTA_T = 0.001   # Sampling interval (unit: [sec.])
 
 # Signal property
@@ -31,11 +31,11 @@ FR1 = 13.0
 FR2 = 17.0
 
 # Composition Weight
-W1 = 0.5
-W2 = -2.0
+W1 = 1.0
+W2 = -1.0
 
 # Baseline
-W0 = 0.9
+W0 = 2.0
 
 # Window size for moving average
 MV_W = 10
@@ -96,10 +96,11 @@ Y = S
 MODEL = lnp.LNP()
 
 # Change the options of the object
-MODEL.set_options(method='MLE2', delta_t=DELTA_T, lmbd=1e-8)
+MODEL.set_options(method='MLE2', delta_t=DELTA_T, lmbd=1e-4)
 
+dist=[0.03, 0.04]
 # Run the fitting algorithm
-MODEL.fit(X, Y)
+MODEL.fit(X, Y, dist)
 
 # Predict the responses to given predictors
 PY = MODEL.predict(X)

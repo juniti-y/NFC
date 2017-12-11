@@ -100,18 +100,18 @@ class LNP:
         print(self.xdata)
         print(self.ydata)
 
-    def fit(self, xdata, ydata):
+    def fit(self, xdata, ydata, dist=None):
         """
         Estimate the model parameters using the training data set (xdata, ydata)
         """
         ### Selecting the estimation algorithm
         if self.__method == 'MLE':
-            self.run_mle(xdata, ydata)
+            self.run_mle(xdata, ydata, dist)
         elif self.__method == 'MLE2':
-            self.run_mle2(xdata, ydata)
+            self.run_mle2(xdata, ydata, dist)
         return
 
-    def run_mle(self, xdata, ydata):
+    def run_mle(self, xdata, ydata, dist=None):
         """
         Estimate the model parameters that fit the training data
         (xdata,ydata) by maximum likelihood estimation method.
@@ -119,18 +119,18 @@ class LNP:
         with lambda = 0.0
         """
         self.set_options(lmbd=0.0)
-        self.run_mle2(xdata, ydata)
+        self.run_mle2(xdata, ydata, dist)
         return
 
-    def run_mle2(self, xdata, ydata):
+    def run_mle2(self, xdata, ydata, dist=None):
         """
         Estimate the model parameters that fit the training data
         (xdata,ydata) by L2-reguralized maximum likelihood estimation method
         """
-        
+
         # Get the number of training samples
         ndata = xdata.shape[0]
-        
+
         # Store the training data into private variables
         self.xdata = np.c_[xdata.copy(), np.ones((ndata, 1))]
         self.ydata = ydata.copy()
@@ -138,13 +138,18 @@ class LNP:
         # Get the regularization parameter
         lmbd = self.__lambda
 
+        # Set [dist] by one if unset
+        if dist is None:
+            dist = np.ones(self.xdata.shape[1]-1)
+
         # Intialize the parameters by zero-vector
         weight = np.zeros(self.xdata.shape[1])
-        # weight = np.zeros((self.xdata.shape[1], 1))
+
         # Evaluate the initial log-likelihood
         llh = self.__log_likelihood(weight)
         # Evaluate the initial l2-penalty
-        pnlt = 0.5 * lmbd * np.dot(weight[:-1], weight[:-1])
+        pnlt = 0.5 * lmbd * np.dot(dist, weight[:-1]*weight[:-1])
+
         # Evaluate the regularized error function
         err = - llh/ndata + pnlt
 
@@ -160,16 +165,14 @@ class LNP:
             # Evaluate the gradient of log-likelihood
             grad_l = self.__grad_log_likelihood(weight)
             # Evaluate the gradient of l2-penalty term
-            grad_p = lmbd * weight
-            grad_p[-1] = 0.0
+            grad_p = lmbd * np.append(dist, 0) * weight
             # Evaluate the gradient of error function
             grad_err = - grad_l/ndata + grad_p
 
             # Evaluate the Hessian of log-likelihood
             hes_l = self.__hessian_log_likelihood(weight)
             # Evaluate the Hessian of l2-penelty term
-            hes_p = lmbd * np.eye(weight.size)
-            hes_p[-1] = 0.0
+            hes_p = lmbd * np.diag(np.append(dist, 0))
             # Evaluate the Hessian of error function
             hes_err = - hes_l/ndata + hes_p
 
@@ -183,7 +186,7 @@ class LNP:
                 # Evaluate the log-likelihood of the updated parameter
                 llh_new = self.__log_likelihood(w_new)
                 # Evaluate the l2-penalty of the updated parameter
-                pnlt_new = 0.5 * lmbd * np.dot(w_new[:-1], w_new[:-1])
+                pnlt_new = 0.5 * lmbd * np.dot(dist, w_new[:-1]*w_new[:-1])
                 # Evaluate the regularized error function after updating
                 err_new = -llh_new/ndata + pnlt_new
                 if err_new <= err:
